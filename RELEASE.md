@@ -5,6 +5,10 @@
 *   Introduced `PipelineConfig` and `BaseComponentConfig` to control the
     platform specific settings for pipelines and components.
 *   Added a custom Executor of Pusher to push model to BigQuery ML for serving.
+*   Enable KubeflowDagRunner to recognize RuntimeParameter and interpret them
+    as Argo workflow parameter, so that user can specify their values at
+    runtime. Currently only string-typed properties can be parameterized in this
+    way.
 
 ## Bug fixes and other changes
 

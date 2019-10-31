@@ -17,6 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 
 from kfp import compiler
 from kfp import dsl
@@ -25,12 +26,14 @@ from kubernetes import client as k8s_client
 from typing import Callable, List, Optional, Text
 
 from tfx import version
+from tfx.orchestration import data_types
 from tfx.orchestration import pipeline as tfx_pipeline
 from tfx.orchestration import tfx_runner
 from tfx.orchestration.config import config_utils
 from tfx.orchestration.config import pipeline_config
 from tfx.orchestration.kubeflow import base_component
 from tfx.orchestration.kubeflow.proto import kubeflow_pb2
+from tfx.utils import json_utils
 
 # OpFunc represents the type of a function that takes as input a
 # dsl.ContainerOp and returns the same object. Common operations such as adding
@@ -221,6 +224,36 @@ class KubeflowDagRunner(tfx_runner.TfxRunner):
     self._output_filename = output_filename
     self._compiler = compiler.Compiler()
     self._params = []  # List of dsl.PipelineParam used in this pipeline.
+    self._deduped_parameter_names = set()  # Set of unique param names used.
+
+  def _parse_parameter_from_component(
+      self, component: base_component.BaseComponent) -> None:
+    """Extract embedded RuntimeParameter placeholders from a component.
+
+    Extract embedded RuntimeParameter placeholders from a component, then append
+    the corresponding dsl.PipelineParam to KubeflowDagRunner.
+
+    Args:
+      component: a TFX component.
+    """
+
+    serialized_exec_properties = json_utils.dumps(component.exec_properties)
+    placeholders = re.findall(data_types.PARAMETER_PATTERN,
+                              serialized_exec_properties)
+    for placeholder in placeholders:
+      runtime_parameter = data_types.RuntimeParameter.parse(placeholder)
+      if runtime_parameter.name not in self._deduped_parameter_names:
+        self._deduped_parameter_names.add(runtime_parameter.name)
+        dsl_parameter = dsl.PipelineParam(
+            name=runtime_parameter.name, value=runtime_parameter.default)
+        self._params.append(dsl_parameter)
+
+  def _parse_parameter_from_pipeline(self,
+                                     pipeline: tfx_pipeline.Pipeline) -> None:
+    """Extract all the RuntimeParameter placeholders from the pipeline."""
+
+    for component in pipeline.components:
+      self._parse_parameter_from_component(component)
 
   def _construct_pipeline_graph(self, pipeline: tfx_pipeline.Pipeline,
                                 pipeline_root: dsl.PipelineParam):
@@ -283,6 +316,10 @@ class KubeflowDagRunner(tfx_runner.TfxRunner):
       logical pipeline definition.
       """
       self._construct_pipeline_graph(pipeline, pipeline_root)
+
+    # Need to run this first to get self._params populated. Then KFP compiler
+    # can correctly match default value with PipelineParam.
+    self._parse_parameter_from_pipeline(pipeline)
 
     file_name = self._output_filename or pipeline.pipeline_info.pipeline_name + '.tar.gz'
     # Create workflow spec and write out to package.

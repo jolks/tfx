@@ -28,14 +28,17 @@ import yaml
 from ml_metadata.proto import metadata_store_pb2
 from tfx.components.example_gen.big_query_example_gen import component as big_query_example_gen_component
 from tfx.components.statistics_gen import component as statistics_gen_component
+from tfx.orchestration import data_types
 from tfx.orchestration import pipeline as tfx_pipeline
 from tfx.orchestration.kubeflow import kubeflow_dag_runner
 
 
 # 2-step pipeline under test.
 def _two_step_pipeline() -> tfx_pipeline.Pipeline:
+  table_name = data_types.RuntimeParameter(
+      name='table-name', default='default-table')
   example_gen = big_query_example_gen_component.BigQueryExampleGen(
-      query='SELECT * FROM TABLE')
+      query='SELECT * FROM %s' % table_name)
   statistics_gen = statistics_gen_component.StatisticsGen(
       examples=example_gen.outputs['examples'])
   return tfx_pipeline.Pipeline(
@@ -100,6 +103,9 @@ class KubeflowDagRunnerTest(tf.test.TestCase):
                       'parameters': [{
                           'name': 'pipeline-root',
                           'value': '{{inputs.parameters.pipeline-root}}'
+                      }, {
+                          'name': 'table-name',
+                          'value': '{{inputs.parameters.table-name}}'
                       }]
                   }
               }, {

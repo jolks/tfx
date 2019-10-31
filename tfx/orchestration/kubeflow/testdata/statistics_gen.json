@@ -52,43 +52,7 @@
                     "stringValue": "CsvExampleGen"
                   },
                   "split": {
-                    "stringValue": "train"
-                  },
-                  "type_name": {
-                    "stringValue": "ExamplesPath"
-                  }
-                }
-              },
-              "artifact_type": {
-                "name": "ExamplesPath",
-                "properties": {
-                  "name": "STRING",
-                  "pipeline_name": "STRING",
-                  "producer_component": "STRING",
-                  "span": "INT",
-                  "split": "STRING",
-                  "state": "STRING",
-                  "type_name": "STRING"
-                }
-              }
-            },
-            {
-              "__class__": "Examples",
-              "__module__": "tfx.types.standard_artifacts",
-              "__tfx_object_type__": "jsonable",
-              "artifact": {
-                "properties": {
-                  "name": {
-                    "stringValue": "examples"
-                  },
-                  "pipeline_name": {
-                    "stringValue": "test_pipeline"
-                  },
-                  "producer_component": {
-                    "stringValue": "CsvExampleGen"
-                  },
-                  "split": {
-                    "stringValue": "eval"
+                    "stringValue": "{{pipelineparam:op=;name=example-gen-output-name}}"
                   },
                   "type_name": {
                     "stringValue": "ExamplesPath"

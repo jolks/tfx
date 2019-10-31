@@ -26,6 +26,7 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+import re
 
 import absl
 from kfp import dsl
@@ -33,6 +34,7 @@ from kubernetes import client as k8s_client
 from typing import Optional, Set, Text, Type
 
 from tfx.components.base import base_component as tfx_base_component
+from tfx.orchestration import data_types
 from tfx.orchestration import pipeline as tfx_pipeline
 from tfx.orchestration.config import base_component_config
 from tfx.orchestration.kubeflow.proto import kubeflow_pb2
@@ -87,6 +89,19 @@ class BaseComponent(object):
         component_launcher_class.__module__, component_launcher_class.__name__
     ])
 
+    serialized_component = json_utils.dumps(component)
+    # Replace RuntimeParameter placeholders in serialized_component with
+    # dsl.PipelineParam.
+    placeholders = re.findall(data_types.PARAMETER_PATTERN,
+                              serialized_component)
+
+    for placeholder in placeholders:
+      runtime_parameter = data_types.RuntimeParameter.parse(placeholder)
+      dsl_parameter = dsl.PipelineParam(name=runtime_parameter.name)
+      serialized_component = serialized_component.replace(
+          '{{<RuntimeParameter>:%s</RuntimeParameter>}}' % placeholder,
+          str(dsl_parameter))
+
     arguments = [
         '--pipeline_name',
         pipeline_name,
@@ -101,7 +116,7 @@ class BaseComponent(object):
         '--component_launcher_class_path',
         component_launcher_class_path,
         '--serialized_component',
-        json_utils.dumps(component),
+        serialized_component,
         '--component_config',
         json_utils.dumps(component_config),
     ]
