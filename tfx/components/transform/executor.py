@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+from typing import Any, Dict, Generator, List, Mapping, Optional, Sequence, Text, Tuple, Union
+
 import absl
 import apache_beam as beam
 import numpy as np
@@ -34,7 +37,7 @@ from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import dataset_schema
 from tensorflow_transform.tf_metadata import metadata_io
 from tensorflow_transform.tf_metadata import schema_utils
-from typing import Any, Dict, Generator, List, Mapping, Sequence, Text, Tuple, Union, Optional
+
 from tensorflow_metadata.proto.v0 import schema_pb2
 from tensorflow_metadata.proto.v0 import statistics_pb2
 from tfx import types

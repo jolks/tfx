@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,4 +64,3 @@ class Schema(artifact.Artifact):
 
 class TransformGraph(artifact.Artifact):
   TYPE_NAME = 'TransformPath'
-
